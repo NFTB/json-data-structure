@@ -18,13 +18,53 @@ static JSON *create_json(void)
     JSON *basic = json_new(JSON_OBJ);
     if (!basic)
         goto failed_;
-
+    JSON *dns = json_new(JSON_ARR);
+    if (!dns)
+        goto failed_;
+    
     json_add_member(json, "basic", basic);
     json_add_member(basic, "enable", json_new_bool(TRUE));
+    json_add_member(basic,"ip",json_new_str("200.200.3.61"));
     json_add_member(basic, "port", json_new_num(389));
     json_add_member(basic, "timeout", json_new_num(10));
-    json_add_member(basic, "basedn", json_new_str("aa"));
+    json_add_member(basic, "basedn", json_new_str("aaa"));
     json_add_member(basic, "fd", json_new_num(-1));
+    json_add_member(basic, "maxcnt", json_new_num(133333333333));
+    json_add_element(dns,json_new_str("200.200.0.1"));
+    json_add_element(dns,json_new_str("200.0.0.254"));
+    json_add_member(basic,"dns",dns);
+
+    JSON *advance = json_new(JSON_OBJ);
+    if (!advance)
+        goto failed_;
+    dns=json_new(JSON_ARR);
+    if (!dns)
+        goto failed_;
+    JSON *huanan = json_new(JSON_OBJ);
+    if(!huanan)
+        goto failed_;
+    JSON *huabei = json_new(JSON_OBJ);
+    if(!huabei)
+        goto failed_;
+    JSON *portpool = json_new(JSON_ARR);
+    if(!portpool)
+        goto failed_;
+    
+    json_add_member(huanan,"name",json_new_str("huanan"));
+    json_add_member(huanan,"ip",json_new_str("200.200.0.1"));
+    json_add_member(huabei,"name",json_new_str("huabei"));
+    json_add_member(huabei,"ip",json_new_str("200.0.0.254"));
+    json_add_element(dns,huanan);
+    json_add_element(dns,huabei);
+    json_add_member(advance,"dns",dns);
+    json_add_element(portpool,json_new_num(130));
+    json_add_element(portpool,json_new_num(131));
+    json_add_element(portpool,json_new_num(132));
+    json_add_member(advance,"portpool",portpool);
+    json_add_member(advance,"url",json_new_str("http://200.200.0.4/main"));
+    json_add_member(advance,"path",json_new_str("/etc/sinfors"));
+    json_add_member(advance,"value",json_new_num(3.14));
+    json_add_member(basic,"advance",advance);
 
     //TODO: 补充完善代码，构建出完整的JSON对象(即readme.md中展示的范例)
     if (!json_add_member(basic, "ip", json_new_str("200.200.3.61")))
