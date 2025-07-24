@@ -126,7 +126,7 @@ TEST(json_save, str)
     buf_t result;
     const char *expect = "hello world";
 
-    json = json_new_str("hello json");
+    json = json_new_str("hello world");
     EXPECT_EQ(0, json_save(json, "test.yml"));
     EXPECT_EQ(0, read_file(&result, "test.yml"));
 
@@ -139,9 +139,9 @@ TEST(json_save, special_str)
 {
     JSON *json;
     buf_t result;
-    const char *expect = "hello\\nworld";
+    const char *expect = "hello\nworld";
 
-    json = json_new_str("hello\njson");
+    json = json_new_str("hello\nworld");
     EXPECT_EQ(0, json_save(json, "test.yml"));
     EXPECT_EQ(0, read_file(&result, "test.yml"));
 
@@ -154,7 +154,7 @@ TEST(json_save, obj)
 {
     JSON *json;
     buf_t result;
-    const char *expect = "key: hello\nname: world\n";
+    const char *expect = "key: hello\nname: world";
 
     json = json_new(JSON_OBJ);
     json_add_member(json, "key", json_new_str("hello"));

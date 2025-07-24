@@ -80,9 +80,39 @@ JSON *json_new(json_e type)
  * @details
  * 该JSON值可能含子成员，也要一起释放
  */
-void json_free(JSON *json)
-{
-    //TODO:
+void json_free(JSON *json) {
+    if (!json) return;  // 安全检查
+
+    switch (json->type) {
+        case JSON_STR:
+            free(json->str);  // 释放字符串内存
+            break;
+
+        case JSON_ARR:
+            // 递归释放数组所有元素
+            for (size_t i = 0; i < json->arr.count; i++) {
+                json_free(json->arr.elems[i]);
+            }
+            free(json->arr.elems);  // 释放元素指针数组
+            break;
+
+        case JSON_OBJ:
+            // 递归释放对象所有键值对
+            for (size_t i = 0; i < json->obj.count; i++) {
+                free(json->obj.kvs[i].key);    // 释放键字符串
+                json_free(json->obj.kvs[i].val); // 释放值
+            }
+            free(json->obj.kvs);  // 释放键值对数组
+            break;
+
+        case JSON_NUM:
+        case JSON_BOL:
+        case JSON_NONE:
+            // 基础类型无需额外释放
+            break;
+    }
+
+    free(json);  // 最后释放JSON结构体本身
 }
 /**
  * 获取JSON值json的类型
@@ -102,7 +132,11 @@ json_e json_type(const JSON *json)
 JSON *json_new_bool(BOOL val)
 {
     //TODO:
-    return NULL;
+    JSON *json = json_new(JSON_BOL);
+    if (!json)
+        return NULL;
+    json->bol = val;
+    return json;
 }
 /**
  * 新建一个数字类型的JSON值
@@ -216,16 +250,88 @@ const JSON *json_get_element(const JSON *json, U32 idx)
     return json->arr.elems[idx];
 }
 /**
- * @brief 把JSON值json以YAML格式输出，保存到名字为fname的文件中
- * 
- * @param json  JSON值
- * @param fname 输出文件名
- * @return int 0表示成功，<0表示失败
+ * @brief 递归将JSON值写入文件（YAML格式）
+ * @param json JSON值
+ * @param fp 文件指针
+ * @param indent 当前缩进级别
  */
-int json_save(const JSON *json, const char *fname)
-{
-    //TODO:
-    return -1;
+static void json_write_yaml(const JSON *json, FILE *fp, int indent,BOOL fistLine) {
+    if (!json || !fp) return;
+
+    char indentation[indent * 2 + 1];
+    memset(indentation, ' ', indent * 2);
+    indentation[indent * 2] = '\0';
+
+    switch (json->type) {
+        case JSON_NONE:
+            fprintf(fp, "null");
+            break;
+            
+        case JSON_BOL:
+            fprintf(fp, "%s", json->bol ? "true" : "false");
+            break;
+            
+        case JSON_NUM:
+            if (json->num == (long long)json->num) {
+                fprintf(fp, "%lld", (long long)json->num);  // 整数
+            } else {
+                fprintf(fp, "%g", json->num);  // 浮点数
+            }
+            break;
+            
+        case JSON_STR:
+            fprintf(fp, "%s", json->str);
+            break;
+            
+        case JSON_ARR:
+            if (json->arr.count == 0) {
+                fprintf(fp, "[]");
+                break;
+            }
+            fprintf(fp, "\n");
+            for (size_t i = 0; i < json->arr.count; i++) {
+                fprintf(fp, "%s- ", indentation);
+                json_write_yaml(json->arr.elems[i], fp, indent + 1,TRUE);
+                if (i != json->arr.count - 1) fprintf(fp, "\n");
+            }
+            break;
+            
+        case JSON_OBJ:
+            if (json->obj.count == 0) {
+                fprintf(fp, "{}");
+                break;
+            }
+            if(!fistLine)
+                fprintf(fp, "\n");
+            for (size_t i = 0; i < json->obj.count; i++) {
+                if(!fistLine){
+                    fprintf(fp, "%s%s: ", indentation, json->obj.kvs[i].key);
+                }
+                else{
+                    fprintf(fp, "%s: ", json->obj.kvs[i].key);
+                }
+                fistLine=FALSE;
+                json_write_yaml(json->obj.kvs[i].val, fp, indent + 1,FALSE);
+                if (i != json->obj.count - 1) fprintf(fp, "\n");
+            }
+            break;
+    }
+}
+/**
+ * @brief 把JSON值以YAML格式保存到文件
+ * @param json JSON值
+ * @param fname 输出文件名
+ * @return int 0成功，<0失败
+ */
+int json_save(const JSON *json, const char *fname) {
+    if (!json || !fname) return -1;
+
+    FILE *fp = fopen(fname, "w");
+    if (!fp) return -2;
+
+    json_write_yaml(json, fp, 0, TRUE);
+    fclose(fp);
+    return 0;
 }
 //  想想：json_add_member和json_add_element中，val应该是堆分配，还是栈分配？
 //  想想：如果json_add_member失败，应该由谁来释放val？
@@ -253,7 +359,33 @@ JSON *json_add_member(JSON *json, const char *key, JSON *val)
     //想想: 为啥不用assert检查val？
     //想想：如果json中已经存在名字为key的成员，怎么办？
     //TODO:
-    return NULL;
+    // 1. 检查 key 是否已存在
+    if(json_get_member(json,key)){
+        json_free(val);
+        return NULL;                      
+    }
+    
+    // 2. key 不存在，新增键值对
+    U32 new_count = json->obj.count + 1;
+    struct keyvalue *new_kvs = realloc(json->obj.kvs, new_count * sizeof(struct keyvalue));
+    if (!new_kvs) {
+        json_free(val);  // 内存分配失败，需释放 val
+        return NULL;
+    }
+
+    char *key_copy = strdup(key);  // 深拷贝 key
+    if (!key_copy) {
+        free(new_kvs);
+        json_free(val);
+        return NULL;
+    }
+
+    // 写入新键值对
+    new_kvs[json->obj.count] = (struct keyvalue){ .key = key_copy, .val = val };
+    json->obj.kvs = new_kvs;
+    json->obj.count = new_count;
+
+    return val;  // 成功返回 val
 }
 /**
  * @brief 往数组类型的json中追加一个元素
@@ -271,7 +403,20 @@ JSON *json_add_element(JSON *json, JSON *val)
 
     //想想：为啥不用assert检查val？
     //TODO:
-    return NULL;
+    // 扩容指针数组（首次分配或扩容）
+    size_t new_count = json->arr.count + 1;
+    JSON **new_elems = realloc(json->arr.elems, new_count * sizeof(JSON*));
+    if (!new_elems) {
+        if (val) json_free(val);
+        return NULL;
+    }
+
+    // 追加元素并更新元数据
+    json->arr.elems = new_elems;
+    json->arr.elems[json->arr.count] = val; // 转移所有权
+    json->arr.count = new_count;
+
+    return val; // 返回val以支持链式调用
 }
 
 #if ACTIVE_PLAN == 1

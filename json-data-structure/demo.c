@@ -64,11 +64,9 @@ static JSON *create_json(void)
     json_add_member(advance,"url",json_new_str("http://200.200.0.4/main"));
     json_add_member(advance,"path",json_new_str("/etc/sinfors"));
     json_add_member(advance,"value",json_new_num(3.14));
-    json_add_member(basic,"advance",advance);
+    json_add_member(json, "advance", advance);
 
     //TODO: 补充完善代码，构建出完整的JSON对象(即readme.md中展示的范例)
-    if (!json_add_member(basic, "ip", json_new_str("200.200.3.61")))
-        goto failed_;
     return json;
 failed_:
     json_free(json);
@@ -124,7 +122,6 @@ int main(int argc, char *argv[])
     if (!json)
         return 1;
     int ret = json_save(json, "./test.yml");
-
 //TODO: ...
     config_st cfg;
     config_init(&cfg);
