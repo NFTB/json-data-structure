@@ -88,13 +88,13 @@ extern "C" {
  * 打印红色命令行日志
  */
 #define LOG_RED(format, args...) \
-	do { printf("\033[31m"format"\033[0m", ##args); }while(0)
+	do { printf("\033[31m" format"\033[0m", ##args); }while(0)
 
 /**
  * 打印绿色命令行日志
  */
 #define LOG_GREEN(format, args...) \
-	do { printf("\033[32m"format"\033[0m", ##args); }while(0)
+	do { printf("\033[32m" format"\033[0m", ##args); }while(0)
 
 void xtest_fail_message(const char *file, int lineno, const char *fmt, ...);
 void xtest_exit(int code);

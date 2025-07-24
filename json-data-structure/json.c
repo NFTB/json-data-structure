@@ -492,19 +492,54 @@ const char *json_obj_get_str(const JSON *json, const char *key, const char *def)
 int json_obj_set_num(JSON *json, const char *key, double val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_OBJ || !key) return -1;
+    
+    // 查找现有成员
+    JSON *existing = (JSON*)json_get_member(json, key);
+    if (existing) {
+        // 已存在则修改值
+        if (existing->type != JSON_NUM) return -1;
+        existing->num = val;
+    } else {
+        // 不存在则新建
+        JSON *new_val = json_new_num(val);
+        if (!new_val || !json_add_member(json, key, new_val)) return -1;
+    }
+    return 0;
 }
 
 int json_obj_set_bool(JSON *json, const char *key, BOOL val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_OBJ || !key) return -1;
+    
+    JSON *existing = (JSON*)json_get_member(json, key);
+    if (existing) {
+        if (existing->type != JSON_BOL) return -1;
+        existing->bol = val;
+    } else {
+        JSON *new_val = json_new_bool(val);
+        if (!new_val || !json_add_member(json, key, new_val)) return -1;
+    }
+    return 0;
 }
 
 int json_obj_set_str(JSON *json, const char *key, const char *val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_OBJ || !key || !val) return -1;
+    
+    JSON *existing = (JSON*)json_get_member(json, key);
+    if (existing) {
+        if (existing->type != JSON_STR) return -1;
+        free(existing->str);
+        existing->str = strdup(val);
+        if (!existing->str) return -1;
+    } else {
+        JSON *new_val = json_new_str(val);
+        if (!new_val || !json_add_member(json, key, new_val)) return -1;
+    }
+    return 0;
 }
 
 int json_arr_count(const JSON *json)
@@ -517,37 +552,64 @@ int json_arr_count(const JSON *json)
 double json_arr_get_num(const JSON *json, int idx, double def)
 {
     //TODO:
-    return def;
+    if (!json || json->type != JSON_ARR || idx < 0 || idx >= json->arr.count)
+        return def;
+    
+    const JSON *elem = json->arr.elems[idx];
+    return (elem && elem->type == JSON_NUM) ? elem->num : def;
 }
 
 BOOL json_arr_get_bool(const JSON *json, int idx)
 {
     //TODO:
-    return FALSE;
+    if (!json || json->type != JSON_ARR || idx < 0 || idx >= json->arr.count)
+        return FALSE;
+    
+    const JSON *elem = json->arr.elems[idx];
+    return (elem && elem->type == JSON_BOL) ? elem->bol : FALSE;
 }
 
 const char *json_arr_get_str(const JSON *json, int idx, const char *def)
 {
     //TODO:
-    return def;
+    if (!json || json->type != JSON_ARR || idx < 0 || idx >= json->arr.count)
+        return def;
+    
+    const JSON *elem = json->arr.elems[idx];
+    return (elem && elem->type == JSON_STR) ? elem->str : def;
 }
 
 int json_arr_add_num(JSON *json, double val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_ARR) return -1;
+    
+    JSON *new_elem = json_new_num(val);
+    if (!new_elem) return -1;
+    
+    return json_add_element(json, new_elem) ? 0 : -1;
 }
 
 int json_arr_add_bool(JSON *json, BOOL val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_ARR) return -1;
+    
+    JSON *new_elem = json_new_bool(val);
+    if (!new_elem) return -1;
+
+    return json_add_element(json, new_elem) ? 0 : -1;
 }
 
 int json_arr_add_str(JSON *json, const char *val)
 {
     //TODO:
-    return -1;
+    if (!json || json->type != JSON_ARR || !val) return -1;
+    
+    JSON *new_elem = json_new_str(val);
+    if (!new_elem) return -1;
+    
+    return json_add_element(json, new_elem) ? 0 : -1;
 }
 
 //#elif ACTIVE_PLAN == 2
