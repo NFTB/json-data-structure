@@ -612,7 +612,7 @@ int json_arr_add_str(JSON *json, const char *val)
     return json_add_element(json, new_elem) ? 0 : -1;
 }
 
-//#elif ACTIVE_PLAN == 2
+#elif ACTIVE_PLAN == 2
 /*
 json_get和json_get所使用的路径表达式语法：
 
@@ -835,7 +835,7 @@ const JSON *json_get(const JSON *json, const char *path)
 
     return query_root((JSON *)json, path, NULL);
 }
-//#elif ACTIVE_PLAN == 3
+#elif ACTIVE_PLAN == 3
 /**
  * @brief 设置json成员的值
  * 

@@ -58,21 +58,6 @@ TEST(json_obj_get_str, notexist)
     json_free(json);
 }
 
-TEST(json_get, self)
-{
-    JSON *json = json_new_num(20);
-    const JSON *ret;
-
-    ASSERT_TRUE(json != NULL);
-
-    ret = json_get(json, "");
-    ASSERT_TRUE(json == ret);
-
-    ret = json_get(json, "hello");
-    ASSERT_TRUE(ret == NULL);
-
-    json_free(json);
-}
 //----------------------------------------------------------------------------------------------------
 //  json_save
 //----------------------------------------------------------------------------------------------------
@@ -335,6 +320,83 @@ TEST(json_object, set_and_get) {
     json_free(obj);
 }
 
+
+TEST(json_object, set_bool) {
+    // 创建测试对象
+    JSON *obj = json_new(JSON_OBJ);
+    EXPECT_NE(obj, NULL);
+    // 测试添加新布尔值
+    EXPECT_EQ(0, json_obj_set_bool(obj, "enabled", TRUE));
+    EXPECT_EQ(TRUE, json_obj_get_bool(obj, "enabled"));
+
+    // 测试修改现有布尔值
+    EXPECT_EQ(0, json_obj_set_bool(obj, "enabled", FALSE));
+    EXPECT_EQ(FALSE, json_obj_get_bool(obj, "enabled"));
+
+    // 测试错误情况
+    EXPECT_EQ(-1, json_obj_set_bool(NULL, "key", TRUE));  // NULL对象
+    EXPECT_EQ(-1, json_obj_set_bool(obj, NULL, TRUE));    // NULL键
+    JSON *not_obj = json_new_num(1);
+    EXPECT_EQ(-1, json_obj_set_bool(not_obj, "key", TRUE)); // 非对象类型
+
+    // 测试类型冲突（尝试将非布尔成员改为布尔值）
+    ASSERT_TRUE(json_add_member(obj, "name", json_new_str("test"))!=NULL);
+    EXPECT_EQ(-1, json_obj_set_bool(obj, "name", TRUE));  // 类型不匹配
+
+    json_free(obj);
+    json_free(not_obj);
+}
+
+TEST(json_array, get_bool) {
+    // 创建测试数组 [true, false, "not bool", 123]
+    JSON *arr = json_new(JSON_ARR);
+    EXPECT_NE(arr, NULL);
+
+    EXPECT_EQ(0, json_arr_add_bool(arr, TRUE));
+    EXPECT_EQ(0, json_arr_add_bool(arr, FALSE));
+    EXPECT_EQ(0, json_arr_add_str(arr, "not bool"));
+    EXPECT_EQ(0, json_arr_add_num(arr, 123));
+
+    // 测试正常获取
+    EXPECT_EQ(TRUE, json_arr_get_bool(arr, 0));
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, 1));
+
+    // 测试非法情况
+    EXPECT_EQ(FALSE, json_arr_get_bool(NULL, 0));   // NULL数组
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, -1));   // 负索引
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, 4));    // 越界索引
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, 2));    // 非布尔类型
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, 3));    // 非布尔类型
+
+    // 测试非数组类型
+    JSON *not_arr = json_new_num(1);
+    EXPECT_EQ(FALSE, json_arr_get_bool(not_arr, 0));
+
+    json_free(arr);
+    json_free(not_arr);
+}
+
+TEST(json_array, add_bool) {
+    JSON *arr = json_new(JSON_ARR);
+    EXPECT_NE(arr, NULL);
+
+    // 测试正常添加
+    EXPECT_EQ(0, json_arr_add_bool(arr, TRUE));
+    EXPECT_EQ(0, json_arr_add_bool(arr, FALSE));
+    EXPECT_EQ(2, json_arr_count(arr));
+
+    // 验证添加的值
+    EXPECT_EQ(TRUE, json_arr_get_bool(arr, 0));
+    EXPECT_EQ(FALSE, json_arr_get_bool(arr, 1));
+
+    // 测试错误情况
+    EXPECT_EQ(-1, json_arr_add_bool(NULL, TRUE));   // NULL数组
+    JSON *not_arr = json_new_str("not array");
+    EXPECT_EQ(-1, json_arr_add_bool(not_arr, TRUE)); // 非数组类型
+
+    json_free(arr);
+    json_free(not_arr);
+}
 int main(int argc, char **argv)
 {
 	return xtest_start_test(argc, argv);
