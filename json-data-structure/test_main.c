@@ -194,7 +194,7 @@ TEST(json_save, json_arr_non_empty_outputs_yaml_list) {
     // 添加两个元素到数组
     JSON *elem1 = json_new_num(42);
     JSON *elem2 = json_new_num(3.14);
-    json_add_element(json, elem1); // 假设有 json_add_element 函数
+    json_add_element(json, elem1);
     json_add_element(json, elem2);
 
     EXPECT_EQ(0, json_save(json, "test_arr_non_empty.yml"));
@@ -257,7 +257,6 @@ TEST(json_array, basic_ops) {
     // 测试添加元素
     ASSERT_TRUE(json_add_element(arr, json_new_num(1)) != NULL);
     ASSERT_TRUE(json_add_element(arr, json_new_str("text")) != NULL);
-    
     // 验证数组内容
     ASSERT_EQ(2, json_arr_count(arr));
     ASSERT_EQ(1, json_arr_get_num(arr, 0, 0));

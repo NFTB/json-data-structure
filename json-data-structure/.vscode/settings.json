@@ -12,6 +12,7 @@
         "utility": "c",
         "istream": "c",
         "ostream": "c",
-        "array": "c"
+        "array": "c",
+        "string.h": "c"
     }
 }
