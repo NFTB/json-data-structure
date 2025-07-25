@@ -211,6 +211,67 @@ TEST(json_save, json_arr_non_empty_outputs_yaml_list) {
     free(result.str);
     json_free(json);
 }
+
+TEST(json_save, all_test) {
+    // 直接构建JSON对象
+    JSON *json = json_new(JSON_OBJ);
+    EXPECT_NE(json, NULL);
+    
+    // 构建basic部分
+    JSON *basic = json_new(JSON_OBJ);
+    json_add_member(json, "basic", basic);
+    json_add_member(basic, "enable", json_new_bool(TRUE));
+    json_add_member(basic, "ip", json_new_str("200.200.3.61"));
+    json_add_member(basic, "port", json_new_num(389));
+    json_add_member(basic, "timeout", json_new_num(10));
+    json_add_member(basic, "basedn", json_new_str("aaa"));
+    json_add_member(basic, "fd", json_new_num(-1));
+    json_add_member(basic, "maxcnt", json_new_num(133333333333));
+    
+    // 构建basic.dns数组
+    JSON *dns = json_new(JSON_ARR);
+    json_add_element(dns, json_new_str("200.200.0.1"));
+    json_add_element(dns, json_new_str("200.0.0.254"));
+    json_add_member(basic, "dns", dns);
+    
+    // 构建advance部分
+    JSON *advance = json_new(JSON_OBJ);
+    json_add_member(json, "advance", advance);
+    
+    // 构建advance.dns数组
+    JSON *adv_dns = json_new(JSON_ARR);
+    JSON *huanan = json_new(JSON_OBJ);
+    json_add_member(huanan, "name", json_new_str("huanan"));
+    json_add_member(huanan, "ip", json_new_str("200.200.0.1"));
+    JSON *huabei = json_new(JSON_OBJ);
+    json_add_member(huabei, "name", json_new_str("huabei"));
+    json_add_member(huabei, "ip", json_new_str("200.0.0.254"));
+    json_add_element(adv_dns, huanan);
+    json_add_element(adv_dns, huabei);
+    json_add_member(advance, "dns", adv_dns);
+    
+    // 构建advance.portpool数组
+    JSON *portpool = json_new(JSON_ARR);
+    json_add_element(portpool, json_new_num(130));
+    json_add_element(portpool, json_new_num(131));
+    json_add_element(portpool, json_new_num(132));
+    json_add_member(advance, "portpool", portpool);
+    
+    // 添加其他advance字段
+    json_add_member(advance, "url", json_new_str("http://200.200.0.4/main"));
+    json_add_member(advance, "path", json_new_str("/etc/sinfors"));
+    json_add_member(advance, "value", json_new_num(3.14));
+    
+    // 保存为YAML文件
+    EXPECT_EQ(0, json_save(json, "test_all.yml"));
+    
+    // 验证文件内容
+    buf_t result;
+    EXPECT_EQ(0, read_file(&result, "test_all.yml"));
+    
+    free(result.str);
+    json_free(json);
+}
 TEST(json_basic, creation) {
     // 测试基础类型创建
     JSON *num = json_new_num(3.14);
@@ -313,7 +374,7 @@ TEST(json_object, set_and_get) {
     JSON *obj = json_new(JSON_OBJ);
     json_obj_set_str(obj, "name", "Alice");
     json_obj_set_num(obj, "age", 30);
-    
+    json_obj_set_str(obj, "name", "Alice");
     ASSERT_STREQ("Alice", json_obj_get_str(obj, "name", NULL));
     ASSERT_EQ(30, json_obj_get_num(obj, "age", 0));
     json_free(obj);

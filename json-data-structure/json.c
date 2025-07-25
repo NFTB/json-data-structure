@@ -133,8 +133,7 @@ JSON *json_new_bool(BOOL val)
 {
     //TODO:
     JSON *json = json_new(JSON_BOL);
-    if (!json)
-        return NULL;
+    if (!json) return NULL;
     json->bol = val;
     return json;
 }
@@ -146,8 +145,7 @@ JSON *json_new_bool(BOOL val)
 JSON *json_new_num(double val)
 {
     JSON *json = json_new(JSON_NUM);
-    if (!json)
-        return NULL;
+    if (!json) return NULL;
     json->num = val;
     return json;
 }
@@ -162,8 +160,7 @@ JSON *json_new_str(const char *str)
     assert(str);
     
     json = json_new(JSON_STR);
-    if (!json)
-        return json;
+    if (!json) return json;
     json->str = strdup(str);
     if (!json->str) {
         fprintf(stderr, "json_new_str: strdup(%s) failed", str);
@@ -242,9 +239,6 @@ const JSON *json_get_element(const JSON *json, U32 idx)
     assert(json);
     assert(json->type == JSON_ARR);
     assert(!(json->arr.count > 0 && json->arr.elems == NULL));
-
-    if (json->type != JSON_ARR)
-        return NULL;
     if (idx >= json->arr.count)
         return NULL;
     return json->arr.elems[idx];
